@@ -209,9 +209,58 @@ body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-he
   .home-title{font-size:2.1rem}
   .series-progress,.timer-val{font-size:1.6rem}
 }
+/* ═══ MONTHLY CALENDAR ═══ */
+.cal-header{display:flex;align-items:center;justify-content:space-between;padding:.4rem 0 .7rem}
+.cal-title{font-size:.95rem;font-weight:800;letter-spacing:.02em}
+.cal-nav{background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:1rem;color:var(--text);display:flex;align-items:center;justify-content:center;transition:background .15s}
+.cal-nav:active{background:var(--border)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-dn{text-align:center;font-size:.58rem;font-weight:700;color:var(--muted);letter-spacing:.06em;padding:.3rem 0;text-transform:uppercase}
+.cal-day{border-radius:8px;padding:.35rem .2rem .3rem;display:flex;flex-direction:column;align-items:center;gap:.2rem;min-height:38px;transition:background .2s}
+.cal-empty{background:transparent}
+.cal-day-num{font-size:.75rem;font-weight:700;line-height:1}
+.cal-today .cal-day-num{color:var(--postural)}
+.cal-today{box-shadow:0 0 0 1.5px var(--postural)44;border-radius:8px}
+.cal-dots{display:flex;gap:3px;align-items:center;justify-content:center}
+.cal-dot{width:5px;height:5px;border-radius:50%}
+.cal-legend{display:flex;gap:.8rem;flex-wrap:wrap;padding:.6rem 0 .3rem;justify-content:center}
+.cal-leg-item{display:flex;align-items:center;gap:.3rem;font-size:.62rem;color:var(--muted);font-weight:600}
+.cal-leg-item .cal-dot{width:6px;height:6px}
+
+/* user code chip */
+.user-chip{display:inline-flex;align-items:center;gap:.4rem;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:.25rem .7rem;font-size:.65rem;font-weight:700;color:var(--muted);cursor:pointer;letter-spacing:.08em}
+.user-chip:active{opacity:.7}
 </style>
 </head>
 <body>
+
+<!-- ══════════════ SETUP ══════════════ -->
+<div id="view-setup" class="view">
+  <div style="padding:3rem 1.6rem 2rem;flex:1;display:flex;flex-direction:column;justify-content:center;max-width:420px;margin:0 auto;width:100%">
+    <div style="font-size:2.4rem;margin-bottom:1rem">🔑</div>
+    <h1 style="font-size:1.8rem;font-weight:800;margin-bottom:.5rem">Tu código personal</h1>
+    <p style="font-size:.88rem;color:var(--muted);line-height:1.6;margin-bottom:2rem">
+      Este código identifica tu progreso. Úsalo siempre en todos tus dispositivos para sincronizar tus sesiones.
+    </p>
+    <div style="margin-bottom:1rem">
+      <input id="setup-input" type="text" maxlength="16"
+        placeholder="Escribe o pega tu código"
+        style="width:100%;padding:.85rem 1rem;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;outline:none"
+        oninput="this.value=this.value.toUpperCase()"
+      />
+    </div>
+    <p id="setup-err" style="font-size:.75rem;color:var(--injury);margin-bottom:.8rem;min-height:1rem"></p>
+    <button id="setup-btn" onclick="confirmCode()"
+      style="width:100%;padding:.85rem;border-radius:12px;border:none;background:var(--postural);color:#0a1a10;font-family:'Syne',sans-serif;font-size:.9rem;font-weight:800;cursor:pointer;letter-spacing:.06em;transition:opacity .2s">
+      Empezar →
+    </button>
+    <div style="margin-top:1.5rem;padding:1rem;background:var(--surface2);border-radius:12px;border:1px solid var(--border)">
+      <p style="font-size:.75rem;color:var(--muted);line-height:1.6">
+        💡 <strong style="color:var(--text)">Primera vez:</strong> invéntate un código único (ej: JUAN2025). Apúntalo en algún sitio. Si lo pierdes no podrás recuperar tu historial.
+      </p>
+    </div>
+  </div>
+</div>
 
 <!-- ══════════════ HOME ══════════════ -->
 <div id="view-home" class="view active">
@@ -219,13 +268,12 @@ body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-he
     <div class="home-badge"><div class="home-badge-dot"></div>Plan activo · 5 días</div>
     <h1 class="home-title">Postura &<br><em>Fuerza</em></h1>
     <p class="home-sub">Dos rutinas independientes · Entrena cuando quieras</p>
+    <div style="margin-top:1rem">
+      <span class="user-chip" onclick="showView('view-setup')" title="Cambiar código">🔑 <span id="home-user-code">—</span></span>
+    </div>
   </div>
 
-  <div class="week-bar" id="week-bar"></div>
-  <div class="week-progress">
-    <div class="wp-row"><span class="wp-label">Sesiones esta semana</span><span class="wp-val" id="wp-val">0/7</span></div>
-    <div class="wp-bar"><div class="wp-fill" id="wp-fill" style="width:0%"></div></div>
-  </div>
+  <div id="monthly-calendar" style="padding:.5rem 1.2rem 0"></div>
 
   <div class="section-cards">
     <!-- POSTURAL -->
@@ -560,23 +608,60 @@ const DAYS = [
 ];
 
 // ════════════════════════════════════════
+// SUPABASE
+// ════════════════════════════════════════
+const SUPA_URL = 'https://fmebsgnveovhcbokshac.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtZWJzZ252ZW92aGNib2tzaGFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MzIxMjIsImV4cCI6MjA5MDEwODEyMn0.mdcXbUh2nkmgemRm2kpbeKNbLw0cGJr0Iu_dbW-cx_A';
+
+async function supaInsert(row) {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/sessions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPA_KEY,
+        'Authorization': `Bearer ${SUPA_KEY}`,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(row)
+    });
+    return r.ok;
+  } catch(e) { console.warn('Supabase insert failed:', e); return false; }
+}
+
+async function supaFetch(userCode) {
+  try {
+    const r = await fetch(
+      `${SUPA_URL}/rest/v1/sessions?user_code=eq.${encodeURIComponent(userCode)}&order=completed_at.desc&limit=200`,
+      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` } }
+    );
+    if(!r.ok) return [];
+    return await r.json();
+  } catch(e) { console.warn('Supabase fetch failed:', e); return []; }
+}
+
+// ════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════
 const MODE_CONFIG = {
-  fast:      { sets:2, label:'⚡ Rápido',  color:'#C8A96E', bg:'rgba(200,169,110,.15)' },
-  normal:    { sets:3, label:'✦ Normal',   color:'#52B788',  bg:'rgba(82,183,136,.15)' },
-  extensive: { sets:4, label:'◆ Extensivo',color:'#A86EC8', bg:'rgba(168,110,200,.15)' }
+  fast:      { sets:2, label:'⚡ Rápido',   color:'#C8A96E', bg:'rgba(200,169,110,.15)' },
+  normal:    { sets:3, label:'✦ Normal',    color:'#52B788',  bg:'rgba(82,183,136,.15)' },
+  extensive: { sets:4, label:'◆ Extensivo', color:'#A86EC8', bg:'rgba(168,110,200,.15)' }
 };
 
 const S = {
+  userCode: localStorage.getItem('et_user_code') || null,
   done: JSON.parse(localStorage.getItem('et_done')||'{}'),
+  sessions: [],   // loaded from Supabase
   mode: 'normal',
   currentDay: null,
   doneEx: new Set(),
   timers: {},
-  serieState: {}
+  serieState: {},
+  calMonth: new Date()  // month shown in calendar
 };
-const save = () => localStorage.setItem('et_done', JSON.stringify(S.done));
+
+function saveLocal() { localStorage.setItem('et_done', JSON.stringify(S.done)); }
 
 // ════════════════════════════════════════
 // VIEW ROUTING
@@ -587,15 +672,8 @@ function showView(id) {
   window.scrollTo(0,0);
 }
 
-function goToModeSelect() {
-  renderModeScreen();
-  showView('view-mode');
-}
-
-function openPostural() {
-  renderPostural();
-  showView('view-postural');
-}
+function goToModeSelect() { renderModeScreen(); showView('view-mode'); }
+function openPostural()    { renderPostural();   showView('view-postural'); }
 
 function backFromTraining() {
   Object.values(S.timers).forEach(t=>clearInterval(t));
@@ -605,36 +683,148 @@ function backFromTraining() {
 }
 
 // ════════════════════════════════════════
+// SETUP SCREEN (first launch)
+// ════════════════════════════════════════
+function renderSetup() {
+  showView('view-setup');
+}
+
+function generateCode() {
+  return Math.random().toString(36).substring(2,6).toUpperCase() +
+         Math.random().toString(36).substring(2,6).toUpperCase();
+}
+
+async function confirmCode() {
+  const input = document.getElementById('setup-input').value.trim().toUpperCase();
+  const err   = document.getElementById('setup-err');
+  if(input.length < 4) { err.textContent = 'El código debe tener al menos 4 caracteres.'; return; }
+  err.textContent = '';
+  document.getElementById('setup-btn').textContent = 'Conectando…';
+  S.userCode = input;
+  localStorage.setItem('et_user_code', input);
+  // Try to load existing data for this code
+  const sessions = await supaFetch(input);
+  S.sessions = sessions;
+  // Rebuild local done from remote
+  sessions.forEach(s => {
+    const d = new Date(s.completed_at);
+    if(s.session_type==='training' && s.day_id) S.done['day'+s.day_id] = true;
+  });
+  saveLocal();
+  renderHome();
+  showView('view-home');
+}
+
+// ════════════════════════════════════════
 // HOME
 // ════════════════════════════════════════
-function renderHome() {
-  // Week bar
-  const wb = document.getElementById('week-bar');
-  wb.innerHTML = '';
-  const days = ['D','L','M','X','J','V','S'];
-  const today = new Date();
-  const start = new Date(today);
-  start.setDate(today.getDate() - today.getDay());
-  for(let i=0;i<7;i++){
-    const d = new Date(start); d.setDate(start.getDate()+i);
-    const div = document.createElement('div');
-    div.className = 'wday';
-    if(d.toDateString()===today.toDateString()) div.classList.add('is-today');
-    if(S.done[d.toDateString()]) div.classList.add('is-done');
-    div.innerHTML = `<span class="wday-name">${days[d.getDay()]}</span><span class="wday-num">${d.getDate()}</span>`;
-    wb.appendChild(div);
-  }
-  // Week progress
-  const doneKeys = Object.keys(S.done).filter(k => S.done[k]);
-  const pct = Math.min(doneKeys.length/7*100,100);
-  document.getElementById('wp-val').textContent = doneKeys.length+'/7';
-  document.getElementById('wp-fill').style.width = pct+'%';
-  // Day chips on training card
+async function renderHome() {
+  if(!S.userCode) { renderSetup(); return; }
+  // Show user code
+  const codeEl = document.getElementById('home-user-code');
+  if(codeEl) codeEl.textContent = S.userCode;
+  // Refresh sessions from Supabase in background
+  supaFetch(S.userCode).then(sessions => {
+    S.sessions = sessions;
+    renderCalendar();
+    renderHomeChips();
+  });
+  renderCalendar();
+  renderHomeChips();
+}
+
+function renderHomeChips() {
   const chips = document.getElementById('home-day-chips');
+  if(!chips) return;
   chips.innerHTML = DAYS.map(d => {
     const done = S.done['day'+d.id];
     return `<span class="scard-chip" style="background:${done?d.dark:'var(--surface2)'};color:${done?d.color:'var(--muted)'};border:1px solid ${d.color}33">${done?'✓ ':''} ${d.label}</span>`;
   }).join('');
+}
+
+// ════════════════════════════════════════
+// MONTHLY CALENDAR
+// ════════════════════════════════════════
+function renderCalendar() {
+  const cal = document.getElementById('monthly-calendar');
+  if(!cal) return;
+
+  const year  = S.calMonth.getFullYear();
+  const month = S.calMonth.getMonth();
+  const today = new Date();
+
+  // Build a map: dateString → { postural, training, mode }
+  const dayMap = {};
+  S.sessions.forEach(s => {
+    const d   = new Date(s.completed_at);
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    if(!dayMap[key]) dayMap[key] = { postural:false, training:false, mode:null };
+    if(s.session_type==='postural') dayMap[key].postural = true;
+    if(s.session_type==='training') { dayMap[key].training = true; dayMap[key].mode = s.mode; }
+  });
+
+  const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const dayNames   = ['L','M','X','J','V','S','D'];
+
+  const firstDay = new Date(year, month, 1);
+  const lastDay  = new Date(year, month+1, 0);
+  // Monday-first offset
+  let startOffset = firstDay.getDay() - 1;
+  if(startOffset < 0) startOffset = 6;
+
+  let html = `
+    <div class="cal-header">
+      <button class="cal-nav" onclick="shiftMonth(-1)">‹</button>
+      <span class="cal-title">${monthNames[month]} ${year}</span>
+      <button class="cal-nav" onclick="shiftMonth(1)">›</button>
+    </div>
+    <div class="cal-grid">
+      ${dayNames.map(d=>`<div class="cal-dn">${d}</div>`).join('')}`;
+
+  // Empty cells before first day
+  for(let i=0;i<startOffset;i++) html += `<div class="cal-day cal-empty"></div>`;
+
+  for(let d=1; d<=lastDay.getDate(); d++) {
+    const key  = `${year}-${month}-${d}`;
+    const info = dayMap[key];
+    const isToday = (d===today.getDate() && month===today.getMonth() && year===today.getFullYear());
+
+    let dotHtml = '';
+    let cellStyle = '';
+    if(info) {
+      const modeColor = info.mode ? MODE_CONFIG[info.mode]?.color : null;
+      if(info.training && info.postural) {
+        dotHtml = `<div class="cal-dots"><div class="cal-dot" style="background:${modeColor||'#52B788'}"></div><div class="cal-dot" style="background:#52B788"></div></div>`;
+        cellStyle = `background:${modeColor||'#52B788'}18`;
+      } else if(info.training) {
+        dotHtml = `<div class="cal-dots"><div class="cal-dot" style="background:${modeColor||'#C8A96E'}"></div></div>`;
+        cellStyle = `background:${modeColor||'#C8A96E'}18`;
+      } else if(info.postural) {
+        dotHtml = `<div class="cal-dots"><div class="cal-dot" style="background:#52B788"></div></div>`;
+        cellStyle = `background:#52B78818`;
+      }
+    }
+
+    html += `<div class="cal-day${isToday?' cal-today':''}" style="${cellStyle}">
+      <span class="cal-day-num">${d}</span>
+      ${dotHtml}
+    </div>`;
+  }
+
+  html += `</div>
+    <div class="cal-legend">
+      <span class="cal-leg-item"><span class="cal-dot" style="background:#52B788;display:inline-block"></span> Postural</span>
+      <span class="cal-leg-item"><span class="cal-dot" style="background:#C8A96E;display:inline-block"></span> Rápido</span>
+      <span class="cal-leg-item"><span class="cal-dot" style="background:#52B788;display:inline-block"></span> Normal</span>
+      <span class="cal-leg-item"><span class="cal-dot" style="background:#A86EC8;display:inline-block"></span> Extensivo</span>
+    </div>`;
+
+  cal.innerHTML = html;
+}
+
+function shiftMonth(delta) {
+  S.calMonth = new Date(S.calMonth.getFullYear(), S.calMonth.getMonth()+delta, 1);
+  renderCalendar();
 }
 
 // ════════════════════════════════════════
@@ -645,12 +835,11 @@ function renderModeScreen() {
   el.innerHTML = '';
   DAYS.forEach(day => {
     const isDone = S.done['day'+day.id];
-    const card = document.createElement('div');
-    card.className = 'day-item' + (isDone?' is-complete':'');
-    card.style.background = day.dark;
-    card.style.borderColor = isDone ? day.accent+'44' : 'var(--border)';
-    const allEx = [...(WARMUP_SPECIFIC[day.id]||[]), ...WARMUP_COMMON, ...day.sections.flatMap(s=>s.exercises)];
-    const injCount = allEx.filter(e=>e.injured).length;
+    const card   = document.createElement('div');
+    card.className = 'day-item'+(isDone?' is-complete':'');
+    card.style.background   = day.dark;
+    card.style.borderColor  = isDone ? day.accent+'44' : 'var(--border)';
+    const injCount = [...(WARMUP_SPECIFIC[day.id]||[]),...WARMUP_COMMON,...day.sections.flatMap(s=>s.exercises)].filter(e=>e.injured).length;
     card.innerHTML = `
       <div class="di-inner">
         <div class="di-num" style="color:${day.color}">${day.id}</div>
@@ -670,10 +859,7 @@ function renderModeScreen() {
   });
 }
 
-function selectMode(mode) {
-  S.mode = mode;
-  renderModeScreen();
-}
+function selectMode(mode) { S.mode = mode; renderModeScreen(); }
 
 // ════════════════════════════════════════
 // OPEN DAY
@@ -681,27 +867,26 @@ function selectMode(mode) {
 function openDay(dayId) {
   const day = DAYS.find(d=>d.id===dayId);
   S.currentDay = day;
-  S.doneEx = new Set();
+  S.doneEx     = new Set();
   S.serieState = {};
   Object.values(S.timers).forEach(t=>clearInterval(t));
   S.timers = {};
 
-  const mc = MODE_CONFIG[S.mode];
+  const mc        = MODE_CONFIG[S.mode];
   const setsCount = mc.sets;
 
-  document.getElementById('tr-tag').textContent = day.label + ' · ' + day.sub;
+  document.getElementById('tr-tag').textContent  = day.label+' · '+day.sub;
   document.getElementById('tr-title').textContent = day.title;
-  document.getElementById('tr-dur').textContent = day.durations[S.mode];
+  document.getElementById('tr-dur').textContent   = day.durations[S.mode];
   document.getElementById('tr-pfill').style.background = day.accent;
   document.getElementById('tr-header').style.borderBottomColor = day.accent+'33';
   const badge = document.getElementById('tr-mode-badge');
-  badge.textContent = mc.label;
+  badge.textContent   = mc.label;
   badge.style.background = mc.bg;
-  badge.style.color = mc.color;
+  badge.style.color      = mc.color;
 
   const content = document.getElementById('tr-content');
-  // Keep banner at end
-  const banner = document.getElementById('complete-banner');
+  const banner  = document.getElementById('complete-banner');
   banner.classList.remove('show');
   content.innerHTML = '';
   content.appendChild(banner);
@@ -711,13 +896,11 @@ function openDay(dayId) {
   // Block nav
   const nav = document.getElementById('block-nav');
   nav.innerHTML = '';
-  const navItems = [
-    { label:'🔥 Calentamiento', anchor:'bn-warmup' },
-    ...day.sections.map(s=>({ label:s.icon+' '+s.name, anchor:'bn-'+s.name.replace(/\s+/g,'_') }))
-  ];
-  navItems.forEach(item => {
+  [{ label:'🔥 Calentamiento', anchor:'bn-warmup' },
+   ...day.sections.map(s=>({ label:s.icon+' '+s.name, anchor:'bn-'+s.name.replace(/\s+/g,'_') }))
+  ].forEach(item => {
     const btn = document.createElement('button');
-    btn.className = 'bnav-btn';
+    btn.className   = 'bnav-btn';
     btn.textContent = item.label;
     btn.style.borderColor = day.accent+'33';
     btn.onclick = () => { const el=document.getElementById(item.anchor); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); };
@@ -725,49 +908,40 @@ function openDay(dayId) {
   });
 
   // Warmup
-  const wuDiv = document.createElement('div');
-  wuDiv.id = 'bn-warmup';
-  const wuHdr = document.createElement('div');
-  wuHdr.className = 'warmup-block-header';
-  wuHdr.innerHTML = '🔥 Calentamiento · 5–7 min';
+  const wuDiv = document.createElement('div'); wuDiv.id = 'bn-warmup';
+  const wuHdr = document.createElement('div'); wuHdr.className='warmup-block-header'; wuHdr.innerHTML='🔥 Calentamiento · 5–7 min';
   wuDiv.appendChild(wuHdr);
-  const specificWarmup = WARMUP_SPECIFIC[day.id] || [];
-  [...WARMUP_COMMON, ...specificWarmup].forEach(ex => {
+  [...WARMUP_COMMON, ...(WARMUP_SPECIFIC[day.id]||[])].forEach(ex => {
     allIds.push(ex.id);
-    wuDiv.appendChild(buildExCard(ex, '#D4A017', 1, true));
+    wuDiv.appendChild(buildExCard(ex,'#D4A017',1,true));
   });
   content.insertBefore(wuDiv, banner);
 
   // Day sections
   day.sections.forEach(sec => {
-    const secDiv = document.createElement('div');
-    secDiv.id = 'bn-'+sec.name.replace(/\s+/g,'_');
-    const bh = document.createElement('div');
-    bh.className = 'block-header';
+    const secDiv = document.createElement('div'); secDiv.id = 'bn-'+sec.name.replace(/\s+/g,'_');
+    const bh = document.createElement('div'); bh.className='block-header';
     bh.innerHTML = `<div class="bh-icon" style="background:${sec.iconBg}">${sec.icon}</div><div class="bh-text"><div class="bh-name">${sec.name}</div></div>`;
     secDiv.appendChild(bh);
     sec.exercises.forEach(ex => {
       allIds.push(ex.id);
-      // Override sets with mode
-      const effectiveSets = ex.id==='d4e7' ? Math.min(setsCount,2) : setsCount; // torsión espinal max 2
+      const effectiveSets = ex.id==='d4e7' ? Math.min(setsCount,2) : setsCount;
       secDiv.appendChild(buildExCard(ex, day.accent, effectiveSets, false));
     });
     content.insertBefore(secDiv, banner);
   });
 
   window._allIds = allIds;
-  const pips = document.getElementById('tb-pips');
-  pips.innerHTML = allIds.map(id=>`<div class="tb-pip" id="pip-${id}"></div>`).join('');
-  document.getElementById('tb-count').textContent = '0/'+allIds.length;
-  document.getElementById('tb-time').textContent = day.durations[S.mode];
-  document.getElementById('tr-pfill').style.width = '0%';
-  document.getElementById('tr-plabel').textContent = '0/'+allIds.length;
+  document.getElementById('tb-pips').innerHTML = allIds.map(id=>`<div class="tb-pip" id="pip-${id}"></div>`).join('');
+  document.getElementById('tb-count').textContent   = '0/'+allIds.length;
+  document.getElementById('tb-time').textContent    = day.durations[S.mode];
+  document.getElementById('tr-pfill').style.width   = '0%';
+  document.getElementById('tr-plabel').textContent  = '0/'+allIds.length;
 
   showView('view-training');
   requestAnimationFrame(()=>{
-    const hdr = document.getElementById('tr-header');
-    const nav2 = document.getElementById('block-nav');
-    if(hdr&&nav2) nav2.style.top = hdr.offsetHeight+'px';
+    const hdr=document.getElementById('tr-header'), nav2=document.getElementById('block-nav');
+    if(hdr&&nav2) nav2.style.top=hdr.offsetHeight+'px';
     document.getElementById('view-training').scrollTo(0,0);
   });
 }
@@ -776,12 +950,12 @@ function openDay(dayId) {
 // POSTURAL
 // ════════════════════════════════════════
 function renderPostural() {
-  S.doneEx = new Set();
+  S.doneEx     = new Set();
   S.serieState = {};
   Object.values(S.timers).forEach(t=>clearInterval(t));
   S.timers = {};
 
-  const content = document.getElementById('post-content');
+  const content    = document.getElementById('post-content');
   const doneBanner = document.getElementById('postural-done');
   doneBanner.classList.remove('show');
   content.innerHTML = '';
@@ -795,15 +969,14 @@ function renderPostural() {
   const allIds = [];
   POSTURAL_EXERCISES.forEach(ex => {
     allIds.push(ex.id);
-    content.insertBefore(buildExCard(ex, '#52B788', ex.sets, false, true), doneBanner);
+    content.insertBefore(buildExCard(ex,'#52B788',ex.sets,false,true), doneBanner);
   });
 
   window._postIds = allIds;
-  const pips = document.getElementById('post-pips');
-  pips.innerHTML = allIds.map(id=>`<div class="tb-pip" id="pip-${id}"></div>`).join('');
+  document.getElementById('post-pips').innerHTML    = allIds.map(id=>`<div class="tb-pip" id="pip-${id}"></div>`).join('');
   document.getElementById('post-count').textContent = '0/'+allIds.length;
   document.getElementById('post-pfill').style.width = '0%';
-  document.getElementById('post-plabel').textContent = '0/'+allIds.length;
+  document.getElementById('post-plabel').textContent= '0/'+allIds.length;
 }
 
 // ════════════════════════════════════════
@@ -936,31 +1109,42 @@ function completeSerie(e, id, totalSets, color, timerDur, isStrength, isPostural
 
 function updateProgress() {
   const total = window._allIds ? window._allIds.length : 0;
-  const done = S.doneEx.size;
-  document.getElementById('tb-count').textContent = done+'/'+total;
-  document.getElementById('tr-pfill').style.width = (total ? done/total*100 : 0)+'%';
+  const done  = S.doneEx.size;
+  document.getElementById('tb-count').textContent  = done+'/'+total;
+  document.getElementById('tr-pfill').style.width  = (total ? done/total*100 : 0)+'%';
   document.getElementById('tr-plabel').textContent = done+'/'+total;
   if(done===total && total>0){
-    const banner = document.getElementById('complete-banner');
-    banner.classList.add('show');
-    banner.scrollIntoView({behavior:'smooth'});
-    S.done[new Date().toDateString()] = true;
+    document.getElementById('complete-banner').classList.add('show');
+    document.getElementById('complete-banner').scrollIntoView({behavior:'smooth'});
     S.done['day'+S.currentDay.id] = true;
-    save();
+    saveLocal();
+    // Save to Supabase
+    supaInsert({
+      user_code:    S.userCode,
+      session_type: 'training',
+      day_id:       S.currentDay.id,
+      mode:         S.mode
+    });
   }
 }
 
 function updatePosturalProgress() {
   const total = window._postIds ? window._postIds.length : 0;
-  const done = S.doneEx.size;
-  document.getElementById('post-count').textContent = done+'/'+total;
-  document.getElementById('post-pfill').style.width = (total ? done/total*100 : 0)+'%';
+  const done  = S.doneEx.size;
+  document.getElementById('post-count').textContent  = done+'/'+total;
+  document.getElementById('post-pfill').style.width  = (total ? done/total*100 : 0)+'%';
   document.getElementById('post-plabel').textContent = done+'/'+total;
   if(done===total && total>0){
     document.getElementById('postural-done').classList.add('show');
     document.getElementById('postural-done').scrollIntoView({behavior:'smooth'});
-    S.done[new Date().toDateString()+'-postural'] = true;
-    save();
+    saveLocal();
+    // Save to Supabase
+    supaInsert({
+      user_code:    S.userCode,
+      session_type: 'postural',
+      day_id:       null,
+      mode:         null
+    });
   }
 }
 
