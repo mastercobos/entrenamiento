@@ -362,6 +362,7 @@ body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-he
     <div class="complete-banner" id="complete-banner">
       <div class="cb-big">🏆</div>
       <div class="cb-title">Sesión completada</div>
+      <div id="cb-duration" style="font-family:'DM Mono',monospace;font-size:.85rem;color:var(--postural);margin:.3rem 0 .5rem;font-weight:600"></div>
       <div class="cb-sub">Cada sesión es un ladrillo.<br>La postura cambia en semanas, el cuerpo en meses.</div>
       <button class="cb-back" onclick="backFromTraining()">← Volver al plan</button>
     </div>
@@ -399,6 +400,7 @@ body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-he
     <div class="postural-done" id="postural-done">
       <div class="cb-big">🌿</div>
       <div class="cb-title" style="color:var(--postural)">Rutina completada</div>
+      <div id="post-duration" style="font-family:'DM Mono',monospace;font-size:.85rem;color:var(--postural);margin:.3rem 0 .5rem;font-weight:600"></div>
       <div class="cb-sub">Hazla cada día. En semanas notarás la diferencia en la barbilla y la postura.</div>
       <button class="cb-back" onclick="showView('view-home')">← Volver</button>
     </div>
@@ -652,13 +654,14 @@ const MODE_CONFIG = {
 const S = {
   userCode: localStorage.getItem('et_user_code') || null,
   done: JSON.parse(localStorage.getItem('et_done')||'{}'),
-  sessions: [],   // loaded from Supabase
+  sessions: [],
   mode: 'normal',
   currentDay: null,
+  sessionStart: null,  // timestamp when session opened
   doneEx: new Set(),
   timers: {},
   serieState: {},
-  calMonth: new Date()  // month shown in calendar
+  calMonth: new Date()
 };
 
 function saveLocal() { localStorage.setItem('et_done', JSON.stringify(S.done)); }
@@ -758,9 +761,13 @@ function renderCalendar() {
   S.sessions.forEach(s => {
     const d   = new Date(s.completed_at);
     const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-    if(!dayMap[key]) dayMap[key] = { postural:false, training:false, mode:null };
+    if(!dayMap[key]) dayMap[key] = { postural:false, training:false, mode:null, mins:null };
     if(s.session_type==='postural') dayMap[key].postural = true;
-    if(s.session_type==='training') { dayMap[key].training = true; dayMap[key].mode = s.mode; }
+    if(s.session_type==='training') {
+      dayMap[key].training = true;
+      dayMap[key].mode = s.mode;
+      if(s.duration_minutes) dayMap[key].mins = s.duration_minutes;
+    }
   });
 
   const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -808,6 +815,7 @@ function renderCalendar() {
     html += `<div class="cal-day${isToday?' cal-today':''}" style="${cellStyle}">
       <span class="cal-day-num">${d}</span>
       ${dotHtml}
+      ${info && info.mins ? `<span style="font-size:.5rem;color:rgba(255,255,255,.45);font-family:'DM Mono',monospace;line-height:1">${info.mins}m</span>` : ''}
     </div>`;
   }
 
@@ -866,7 +874,8 @@ function selectMode(mode) { S.mode = mode; renderModeScreen(); }
 // ════════════════════════════════════════
 function openDay(dayId) {
   const day = DAYS.find(d=>d.id===dayId);
-  S.currentDay = day;
+  S.currentDay  = day;
+  S.sessionStart = Date.now();
   S.doneEx     = new Set();
   S.serieState = {};
   Object.values(S.timers).forEach(t=>clearInterval(t));
@@ -950,8 +959,9 @@ function openDay(dayId) {
 // POSTURAL
 // ════════════════════════════════════════
 function renderPostural() {
-  S.doneEx     = new Set();
-  S.serieState = {};
+  S.doneEx      = new Set();
+  S.sessionStart = Date.now();
+  S.serieState  = {};
   Object.values(S.timers).forEach(t=>clearInterval(t));
   S.timers = {};
 
@@ -1114,16 +1124,21 @@ function updateProgress() {
   document.getElementById('tr-pfill').style.width  = (total ? done/total*100 : 0)+'%';
   document.getElementById('tr-plabel').textContent = done+'/'+total;
   if(done===total && total>0){
-    document.getElementById('complete-banner').classList.add('show');
-    document.getElementById('complete-banner').scrollIntoView({behavior:'smooth'});
+    const mins = S.sessionStart ? Math.round((Date.now()-S.sessionStart)/60000) : null;
+    const banner = document.getElementById('complete-banner');
+    banner.classList.add('show');
+    // Show real duration in banner
+    const durEl = document.getElementById('cb-duration');
+    if(durEl && mins) durEl.textContent = `⏱ Sesión completada en ${mins} min`;
+    banner.scrollIntoView({behavior:'smooth'});
     S.done['day'+S.currentDay.id] = true;
     saveLocal();
-    // Save to Supabase
     supaInsert({
-      user_code:    S.userCode,
-      session_type: 'training',
-      day_id:       S.currentDay.id,
-      mode:         S.mode
+      user_code:        S.userCode,
+      session_type:     'training',
+      day_id:           S.currentDay.id,
+      mode:             S.mode,
+      duration_minutes: mins
     });
   }
 }
@@ -1135,15 +1150,19 @@ function updatePosturalProgress() {
   document.getElementById('post-pfill').style.width  = (total ? done/total*100 : 0)+'%';
   document.getElementById('post-plabel').textContent = done+'/'+total;
   if(done===total && total>0){
-    document.getElementById('postural-done').classList.add('show');
-    document.getElementById('postural-done').scrollIntoView({behavior:'smooth'});
+    const mins = S.sessionStart ? Math.round((Date.now()-S.sessionStart)/60000) : null;
+    const doneBanner = document.getElementById('postural-done');
+    doneBanner.classList.add('show');
+    const durEl = document.getElementById('post-duration');
+    if(durEl && mins) durEl.textContent = `⏱ ${mins} min`;
+    doneBanner.scrollIntoView({behavior:'smooth'});
     saveLocal();
-    // Save to Supabase
     supaInsert({
-      user_code:    S.userCode,
-      session_type: 'postural',
-      day_id:       null,
-      mode:         null
+      user_code:        S.userCode,
+      session_type:     'postural',
+      day_id:           null,
+      mode:             null,
+      duration_minutes: mins
     });
   }
 }
