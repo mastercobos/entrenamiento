@@ -1,10 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<link rel="manifest" href="./manifest.json">
-<meta name="theme-color" content="#0C0C0C">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Entrena · Postura & Fuerza</title>
@@ -387,7 +383,7 @@ body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-he
 <!-- ══════════════ POSTURAL ══════════════ -->
 <div id="view-postural" class="view">
   <div class="tr-header" style="border-bottom-color:rgba(82,183,136,.25)">
-    <button class="tr-back" onclick="showView('view-home')">← Inicio</button>
+    <button class="tr-back" onclick="backFromPostural()">← Inicio</button>
     <div class="tr-top">
       <div>
         <div class="tr-day-tag" style="color:var(--postural)">Rutina diaria</div>
@@ -682,9 +678,44 @@ function showView(id) {
 function goToModeSelect() { renderModeScreen(); showView('view-mode'); }
 function openPostural()    { renderPostural();   showView('view-postural'); }
 
+function backFromPostural() {
+  Object.values(S.timers).forEach(t=>clearInterval(t));
+  S.timers = {};
+  // Save partial postural session if any exercises done and not already saved
+  const total = window._postIds ? window._postIds.length : 0;
+  const done  = S.doneEx.size;
+  if(done > 0 && done < total && S.userCode) {
+    const secs = S.sessionStart ? Math.round((Date.now()-S.sessionStart)/1000) : 0;
+    const mins = Math.floor(secs/60) || 1;
+    supaInsert({
+      user_code:        S.userCode,
+      session_type:     'postural',
+      day_id:           null,
+      mode:             null,
+      duration_minutes: mins
+    });
+  }
+  renderHome();
+  showView('view-home');
+}
+
 function backFromTraining() {
   Object.values(S.timers).forEach(t=>clearInterval(t));
   S.timers = {};
+  // Save partial session if any exercises done and not already saved (complete)
+  const total = window._allIds ? window._allIds.length : 0;
+  const done  = S.doneEx.size;
+  if(S.currentDay && done > 0 && done < total && S.userCode) {
+    const secs = S.sessionStart ? Math.round((Date.now()-S.sessionStart)/1000) : 0;
+    const mins = Math.floor(secs/60) || 1;
+    supaInsert({
+      user_code:        S.userCode,
+      session_type:     'training',
+      day_id:           S.currentDay.id,
+      mode:             S.mode,
+      duration_minutes: mins
+    });
+  }
   renderHome();
   showView('view-home');
 }
@@ -765,12 +796,15 @@ function renderCalendar() {
   S.sessions.forEach(s => {
     const d   = new Date(s.completed_at);
     const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-    if(!dayMap[key]) dayMap[key] = { postural:false, training:false, mode:null, mins:null };
-    if(s.session_type==='postural') dayMap[key].postural = true;
+    if(!dayMap[key]) dayMap[key] = { postural:false, training:false, mode:null, minsFuerza:null, minsPostural:null };
+    if(s.session_type==='postural') {
+      dayMap[key].postural = true;
+      if(s.duration_minutes) dayMap[key].minsPostural = s.duration_minutes;
+    }
     if(s.session_type==='training') {
       dayMap[key].training = true;
       dayMap[key].mode = s.mode;
-      if(s.duration_minutes) dayMap[key].mins = s.duration_minutes;
+      if(s.duration_minutes) dayMap[key].minsFuerza = s.duration_minutes;
     }
   });
 
@@ -795,6 +829,9 @@ function renderCalendar() {
   // Empty cells before first day
   for(let i=0;i<startOffset;i++) html += `<div class="cal-day cal-empty"></div>`;
 
+  const MODE_COLORS    = { fast:'#C8A96E', normal:'#6E9FC8', extensive:'#A86EC8' };
+  const POSTURAL_COLOR = '#52B788';
+
   for(let d=1; d<=lastDay.getDate(); d++) {
     const key  = `${year}-${month}-${d}`;
     const info = dayMap[key];
@@ -803,23 +840,30 @@ function renderCalendar() {
     let dotHtml = '';
     let cellStyle = '';
     if(info) {
-      const modeColor = info.mode ? MODE_CONFIG[info.mode]?.color : null;
-      if(info.training && info.postural) {
-        dotHtml = `<div class="cal-dots"><div class="cal-dot" style="background:${modeColor||'#52B788'}"></div><div class="cal-dot" style="background:#52B788"></div></div>`;
-        cellStyle = `background:${modeColor||'#52B788'}18`;
-      } else if(info.training) {
-        dotHtml = `<div class="cal-dots"><div class="cal-dot" style="background:${modeColor||'#C8A96E'}"></div></div>`;
-        cellStyle = `background:${modeColor||'#C8A96E'}18`;
-      } else if(info.postural) {
-        dotHtml = `<div class="cal-dots"><div class="cal-dot" style="background:#52B788"></div></div>`;
-        cellStyle = `background:#52B78818`;
+      const trainingColor = info.mode ? MODE_COLORS[info.mode] : '#6E9FC8';
+      const dots = [];
+      const times = [];
+
+      if(info.training) {
+        dots.push(`<div class="cal-dot" style="background:${trainingColor}"></div>`);
+        if(info.minsFuerza) times.push(`<span style="font-size:.48rem;color:${trainingColor};font-family:'DM Mono',monospace;line-height:1.2">${info.minsFuerza}m</span>`);
       }
+      if(info.postural) {
+        dots.push(`<div class="cal-dot" style="background:${POSTURAL_COLOR}"></div>`);
+        if(info.minsPostural) times.push(`<span style="font-size:.48rem;color:${POSTURAL_COLOR};font-family:'DM Mono',monospace;line-height:1.2">${info.minsPostural}m</span>`);
+      }
+
+      dotHtml = `<div class="cal-dots">${dots.join('')}</div>
+                 <div style="display:flex;gap:3px;justify-content:center;flex-wrap:wrap">${times.join('')}</div>`;
+
+      // Background uses training color if present, else postural
+      const bgColor = info.training ? trainingColor : POSTURAL_COLOR;
+      cellStyle = `background:${bgColor}18`;
     }
 
     html += `<div class="cal-day${isToday?' cal-today':''}" style="${cellStyle}">
       <span class="cal-day-num">${d}</span>
       ${dotHtml}
-      ${info && info.mins ? `<span style="font-size:.5rem;color:rgba(255,255,255,.45);font-family:'DM Mono',monospace;line-height:1">${info.mins}m</span>` : ''}
     </div>`;
   }
 
@@ -827,7 +871,7 @@ function renderCalendar() {
     <div class="cal-legend">
       <span class="cal-leg-item"><span class="cal-dot" style="background:#52B788;display:inline-block"></span> Postural</span>
       <span class="cal-leg-item"><span class="cal-dot" style="background:#C8A96E;display:inline-block"></span> Rápido</span>
-      <span class="cal-leg-item"><span class="cal-dot" style="background:#52B788;display:inline-block"></span> Normal</span>
+      <span class="cal-leg-item"><span class="cal-dot" style="background:#6E9FC8;display:inline-block"></span> Normal</span>
       <span class="cal-leg-item"><span class="cal-dot" style="background:#A86EC8;display:inline-block"></span> Extensivo</span>
     </div>`;
 
@@ -1128,12 +1172,13 @@ function updateProgress() {
   document.getElementById('tr-pfill').style.width  = (total ? done/total*100 : 0)+'%';
   document.getElementById('tr-plabel').textContent = done+'/'+total;
   if(done===total && total>0){
-    const mins = S.sessionStart ? Math.round((Date.now()-S.sessionStart)/60000) : null;
+    const secs = S.sessionStart ? Math.round((Date.now()-S.sessionStart)/1000) : 0;
+    const mins = Math.floor(secs/60);
+    const durStr = mins > 0 ? `${mins} min` : `${secs} seg`;
     const banner = document.getElementById('complete-banner');
     banner.classList.add('show');
-    // Show real duration in banner
     const durEl = document.getElementById('cb-duration');
-    if(durEl && mins) durEl.textContent = `⏱ Sesión completada en ${mins} min`;
+    if(durEl) durEl.textContent = `⏱ Sesión completada en ${durStr}`;
     banner.scrollIntoView({behavior:'smooth'});
     S.done['day'+S.currentDay.id] = true;
     saveLocal();
@@ -1142,7 +1187,7 @@ function updateProgress() {
       session_type:     'training',
       day_id:           S.currentDay.id,
       mode:             S.mode,
-      duration_minutes: mins
+      duration_minutes: mins || 1
     });
   }
 }
@@ -1154,11 +1199,13 @@ function updatePosturalProgress() {
   document.getElementById('post-pfill').style.width  = (total ? done/total*100 : 0)+'%';
   document.getElementById('post-plabel').textContent = done+'/'+total;
   if(done===total && total>0){
-    const mins = S.sessionStart ? Math.round((Date.now()-S.sessionStart)/60000) : null;
+    const secs = S.sessionStart ? Math.round((Date.now()-S.sessionStart)/1000) : 0;
+    const mins = Math.floor(secs/60);
+    const durStr = mins > 0 ? `${mins} min` : `${secs} seg`;
     const doneBanner = document.getElementById('postural-done');
     doneBanner.classList.add('show');
     const durEl = document.getElementById('post-duration');
-    if(durEl && mins) durEl.textContent = `⏱ ${mins} min`;
+    if(durEl) durEl.textContent = `⏱ ${durStr}`;
     doneBanner.scrollIntoView({behavior:'smooth'});
     saveLocal();
     supaInsert({
@@ -1166,7 +1213,7 @@ function updatePosturalProgress() {
       session_type:     'postural',
       day_id:           null,
       mode:             null,
-      duration_minutes: mins
+      duration_minutes: mins || 1
     });
   }
 }
@@ -1217,11 +1264,6 @@ function resetTmr(e, id, dur) {
 // INIT
 // ════════════════════════════════════════
 renderHome();
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./service-worker.js")
-    .then(() => console.log("SW listo"))
-    .catch(err => console.log("SW error", err));
-}
 </script>
 </body>
 </html>
