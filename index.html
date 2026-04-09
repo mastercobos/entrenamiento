@@ -227,6 +227,9 @@ body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-he
 .cal-leg-item{display:flex;align-items:center;gap:.3rem;font-size:.62rem;color:var(--muted);font-weight:600}
 .cal-leg-item .cal-dot{width:6px;height:6px}
 
+/* running card */
+.scard-running { background: linear-gradient(135deg,#1a0e00 0%,#120a00 100%); }
+
 /* user code chip */
 .user-chip{display:inline-flex;align-items:center;gap:.4rem;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:.25rem .7rem;font-size:.65rem;font-weight:700;color:var(--muted);cursor:pointer;letter-spacing:.08em}
 .user-chip:active{opacity:.7}
@@ -297,10 +300,106 @@ body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-he
       <div class="scard-meta" id="home-day-chips"></div>
       <div class="scard-arrow">→</div>
     </div>
+    <!-- RUNNING -->
+    <div class="scard scard-running" onclick="openRunning()">
+      <div class="scard-glow" style="background:radial-gradient(circle,rgba(255,140,0,.12) 0%,transparent 70%)"></div>
+      <div class="scard-tag" style="color:#FF8C00">Cardio</div>
+      <div class="scard-title" style="color:#FF8C00">Correr</div>
+      <div class="scard-sub">Registra tiempo y distancia · Se guarda en tu historial</div>
+      <div class="scard-meta" id="home-run-chips"></div>
+      <div class="scard-arrow">→</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════ RUNNING ══════════════ -->
+<div id="view-running" class="view">
+  <div class="tr-header" style="border-bottom-color:rgba(255,140,0,.25)">
+    <button class="tr-back" onclick="showView('view-home')">← Inicio</button>
+    <div class="tr-top">
+      <div>
+        <div class="tr-day-tag" style="color:#FF8C00">Cardio</div>
+        <div class="tr-title">Correr</div>
+      </div>
+    </div>
+  </div>
+  <div style="padding:1.4rem 1.4rem 2rem;flex:1;overflow-y:auto">
+    <div id="run-form">
+      <div style="margin-bottom:1.4rem">
+        <div style="font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:.6rem">Distancia</div>
+        <div style="display:flex;align-items:center;gap:.8rem">
+          <input id="run-km" type="number" min="0" max="999" step="0.1" placeholder="0.0"
+            style="flex:1;padding:.9rem 1rem;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:2rem;font-weight:500;outline:none;text-align:center"
+            oninput="updateRunPreview()"/>
+          <span style="font-size:1.1rem;font-weight:700;color:rgba(255,255,255,.4)">km</span>
+        </div>
+      </div>
+      <div style="margin-bottom:1.8rem">
+        <div style="font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:.6rem">Duración</div>
+        <div style="display:flex;align-items:center;gap:.5rem">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center">
+            <input id="run-h" type="number" min="0" max="23" step="1" placeholder="0"
+              style="width:100%;padding:.8rem .5rem;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:500;outline:none;text-align:center"
+              oninput="updateRunPreview()"/>
+            <span style="font-size:.6rem;color:var(--muted);margin-top:.3rem;font-weight:700;letter-spacing:.08em">HORAS</span>
+          </div>
+          <span style="font-size:1.8rem;color:rgba(255,255,255,.25);padding-bottom:1.2rem">:</span>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center">
+            <input id="run-min" type="number" min="0" max="59" step="1" placeholder="00"
+              style="width:100%;padding:.8rem .5rem;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:500;outline:none;text-align:center"
+              oninput="updateRunPreview()"/>
+            <span style="font-size:.6rem;color:var(--muted);margin-top:.3rem;font-weight:700;letter-spacing:.08em">MIN</span>
+          </div>
+          <span style="font-size:1.8rem;color:rgba(255,255,255,.25);padding-bottom:1.2rem">:</span>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center">
+            <input id="run-sec" type="number" min="0" max="59" step="1" placeholder="00"
+              style="width:100%;padding:.8rem .5rem;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:500;outline:none;text-align:center"
+              oninput="updateRunPreview()"/>
+            <span style="font-size:.6rem;color:var(--muted);margin-top:.3rem;font-weight:700;letter-spacing:.08em">SEG</span>
+          </div>
+        </div>
+      </div>
+      <div id="run-preview" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1rem 1.2rem;margin-bottom:1.4rem;display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem">
+          <div>
+            <div style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:.2rem">Ritmo</div>
+            <div id="run-pace" style="font-family:'DM Mono',monospace;font-size:1.3rem;color:#FF8C00;font-weight:500">—</div>
+            <div style="font-size:.6rem;color:var(--muted)">min/km</div>
+          </div>
+          <div>
+            <div style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:.2rem">Velocidad</div>
+            <div id="run-speed" style="font-family:'DM Mono',monospace;font-size:1.3rem;color:#FF8C00;font-weight:500">—</div>
+            <div style="font-size:.6rem;color:var(--muted)">km/h</div>
+          </div>
+        </div>
+      </div>
+      <div id="run-err" style="font-size:.75rem;color:var(--injury);margin-bottom:.8rem;min-height:1rem"></div>
+      <button onclick="saveRun()"
+        style="width:100%;padding:.85rem;border-radius:12px;border:none;background:#FF8C00;color:#1a0800;font-family:'Syne',sans-serif;font-size:.9rem;font-weight:800;cursor:pointer;letter-spacing:.06em">
+        Guardar sesión →
+      </button>
+    </div>
+    <div id="run-success" style="display:none;text-align:center;padding:2rem 0">
+      <div style="font-size:2.5rem;margin-bottom:.8rem">🏃</div>
+      <div style="font-size:1.3rem;font-weight:800;margin-bottom:.4rem;color:#FF8C00">¡Guardado!</div>
+      <div id="run-success-detail" style="font-size:.88rem;color:var(--muted);line-height:1.6;margin-bottom:1.4rem"></div>
+      <button onclick="resetRunForm()"
+        style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:.7rem 1.4rem;font-size:.82rem;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;color:var(--text);margin-right:.6rem">
+        + Otra sesión
+      </button>
+      <button onclick="showView('view-home')"
+        style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:.7rem 1.4rem;font-size:.82rem;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;color:var(--text)">
+        ← Inicio
+      </button>
+    </div>
+    <div style="margin-top:1.8rem">
+      <div style="font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:.8rem">Últimas sesiones</div>
+      <div id="run-history"></div>
+    </div>
   </div>
 </div>
 
-<!-- ══════════════ MODE SELECT ══════════════ -->
 <div id="view-mode" class="view">
   <div class="mode-screen">
     <button class="mode-back" onclick="showView('view-home')">← Volver</button>
@@ -362,6 +461,7 @@ body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-he
     <div class="complete-banner" id="complete-banner">
       <div class="cb-big">🏆</div>
       <div class="cb-title">Sesión completada</div>
+      <div id="cb-duration" style="font-family:'DM Mono',monospace;font-size:.85rem;color:var(--postural);margin:.3rem 0 .5rem;font-weight:600"></div>
       <div class="cb-sub">Cada sesión es un ladrillo.<br>La postura cambia en semanas, el cuerpo en meses.</div>
       <button class="cb-back" onclick="backFromTraining()">← Volver al plan</button>
     </div>
@@ -382,7 +482,7 @@ body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-he
 <!-- ══════════════ POSTURAL ══════════════ -->
 <div id="view-postural" class="view">
   <div class="tr-header" style="border-bottom-color:rgba(82,183,136,.25)">
-    <button class="tr-back" onclick="showView('view-home')">← Inicio</button>
+    <button class="tr-back" onclick="backFromPostural()">← Inicio</button>
     <div class="tr-top">
       <div>
         <div class="tr-day-tag" style="color:var(--postural)">Rutina diaria</div>
@@ -399,6 +499,7 @@ body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-he
     <div class="postural-done" id="postural-done">
       <div class="cb-big">🌿</div>
       <div class="cb-title" style="color:var(--postural)">Rutina completada</div>
+      <div id="post-duration" style="font-family:'DM Mono',monospace;font-size:.85rem;color:var(--postural);margin:.3rem 0 .5rem;font-weight:600"></div>
       <div class="cb-sub">Hazla cada día. En semanas notarás la diferencia en la barbilla y la postura.</div>
       <button class="cb-back" onclick="showView('view-home')">← Volver</button>
     </div>
@@ -652,13 +753,14 @@ const MODE_CONFIG = {
 const S = {
   userCode: localStorage.getItem('et_user_code') || null,
   done: JSON.parse(localStorage.getItem('et_done')||'{}'),
-  sessions: [],   // loaded from Supabase
+  sessions: [],
   mode: 'normal',
   currentDay: null,
+  sessionStart: null,  // timestamp when session opened
   doneEx: new Set(),
   timers: {},
   serieState: {},
-  calMonth: new Date()  // month shown in calendar
+  calMonth: new Date()
 };
 
 function saveLocal() { localStorage.setItem('et_done', JSON.stringify(S.done)); }
@@ -675,9 +777,44 @@ function showView(id) {
 function goToModeSelect() { renderModeScreen(); showView('view-mode'); }
 function openPostural()    { renderPostural();   showView('view-postural'); }
 
+function backFromPostural() {
+  Object.values(S.timers).forEach(t=>clearInterval(t));
+  S.timers = {};
+  // Save partial postural session if any exercises done and not already saved
+  const total = window._postIds ? window._postIds.length : 0;
+  const done  = S.doneEx.size;
+  if(done > 0 && done < total && S.userCode) {
+    const secs = S.sessionStart ? Math.round((Date.now()-S.sessionStart)/1000) : 0;
+    const mins = Math.floor(secs/60) || 1;
+    supaInsert({
+      user_code:        S.userCode,
+      session_type:     'postural',
+      day_id:           null,
+      mode:             null,
+      duration_minutes: mins
+    });
+  }
+  renderHome();
+  showView('view-home');
+}
+
 function backFromTraining() {
   Object.values(S.timers).forEach(t=>clearInterval(t));
   S.timers = {};
+  // Save partial session if any exercises done and not already saved (complete)
+  const total = window._allIds ? window._allIds.length : 0;
+  const done  = S.doneEx.size;
+  if(S.currentDay && done > 0 && done < total && S.userCode) {
+    const secs = S.sessionStart ? Math.round((Date.now()-S.sessionStart)/1000) : 0;
+    const mins = Math.floor(secs/60) || 1;
+    supaInsert({
+      user_code:        S.userCode,
+      session_type:     'training',
+      day_id:           S.currentDay.id,
+      mode:             S.mode,
+      duration_minutes: mins
+    });
+  }
   renderHome();
   showView('view-home');
 }
@@ -735,11 +872,26 @@ async function renderHome() {
 
 function renderHomeChips() {
   const chips = document.getElementById('home-day-chips');
-  if(!chips) return;
-  chips.innerHTML = DAYS.map(d => {
-    const done = S.done['day'+d.id];
-    return `<span class="scard-chip" style="background:${done?d.dark:'var(--surface2)'};color:${done?d.color:'var(--muted)'};border:1px solid ${d.color}33">${done?'✓ ':''} ${d.label}</span>`;
-  }).join('');
+  if(chips) {
+    chips.innerHTML = DAYS.map(d => {
+      const done = S.done['day'+d.id];
+      return `<span class="scard-chip" style="background:${done?d.dark:'var(--surface2)'};color:${done?d.color:'var(--muted)'};border:1px solid ${d.color}33">${done?'✓ ':''} ${d.label}</span>`;
+    }).join('');
+  }
+  // Last run chip
+  const runChips = document.getElementById('home-run-chips');
+  if(runChips) {
+    const lastRun = S.sessions.filter(s=>s.session_type==='running')[0];
+    if(lastRun) {
+      const parts = [];
+      if(lastRun.distance_km)      parts.push(`${lastRun.distance_km} km`);
+      if(lastRun.duration_minutes) parts.push(`${lastRun.duration_minutes} min`);
+      const d = new Date(lastRun.completed_at);
+      runChips.innerHTML = `<span class="scard-chip" style="background:rgba(255,140,0,.1);color:#FF8C00;border:1px solid rgba(255,140,0,.2)">Última: ${parts.join(' · ')} · ${d.getDate()}/${d.getMonth()+1}</span>`;
+    } else {
+      runChips.innerHTML = `<span class="scard-chip" style="background:var(--surface2);color:var(--muted)">Sin sesiones todavía</span>`;
+    }
+  }
 }
 
 // ════════════════════════════════════════
@@ -758,9 +910,21 @@ function renderCalendar() {
   S.sessions.forEach(s => {
     const d   = new Date(s.completed_at);
     const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-    if(!dayMap[key]) dayMap[key] = { postural:false, training:false, mode:null };
-    if(s.session_type==='postural') dayMap[key].postural = true;
-    if(s.session_type==='training') { dayMap[key].training = true; dayMap[key].mode = s.mode; }
+    if(!dayMap[key]) dayMap[key] = { postural:false, training:false, running:false, mode:null, minsFuerza:null, minsPostural:null, minsRun:null, kmRun:null };
+    if(s.session_type==='postural') {
+      dayMap[key].postural = true;
+      if(s.duration_minutes) dayMap[key].minsPostural = s.duration_minutes;
+    }
+    if(s.session_type==='training') {
+      dayMap[key].training = true;
+      dayMap[key].mode = s.mode;
+      if(s.duration_minutes) dayMap[key].minsFuerza = s.duration_minutes;
+    }
+    if(s.session_type==='running') {
+      dayMap[key].running = true;
+      if(s.duration_minutes) dayMap[key].minsRun = s.duration_minutes;
+      if(s.distance_km)      dayMap[key].kmRun   = s.distance_km;
+    }
   });
 
   const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -784,6 +948,9 @@ function renderCalendar() {
   // Empty cells before first day
   for(let i=0;i<startOffset;i++) html += `<div class="cal-day cal-empty"></div>`;
 
+  const MODE_COLORS    = { fast:'#C8A96E', normal:'#6E9FC8', extensive:'#A86EC8' };
+  const POSTURAL_COLOR = '#52B788';
+
   for(let d=1; d<=lastDay.getDate(); d++) {
     const key  = `${year}-${month}-${d}`;
     const info = dayMap[key];
@@ -792,17 +959,30 @@ function renderCalendar() {
     let dotHtml = '';
     let cellStyle = '';
     if(info) {
-      const modeColor = info.mode ? MODE_CONFIG[info.mode]?.color : null;
-      if(info.training && info.postural) {
-        dotHtml = `<div class="cal-dots"><div class="cal-dot" style="background:${modeColor||'#52B788'}"></div><div class="cal-dot" style="background:#52B788"></div></div>`;
-        cellStyle = `background:${modeColor||'#52B788'}18`;
-      } else if(info.training) {
-        dotHtml = `<div class="cal-dots"><div class="cal-dot" style="background:${modeColor||'#C8A96E'}"></div></div>`;
-        cellStyle = `background:${modeColor||'#C8A96E'}18`;
-      } else if(info.postural) {
-        dotHtml = `<div class="cal-dots"><div class="cal-dot" style="background:#52B788"></div></div>`;
-        cellStyle = `background:#52B78818`;
+      const trainingColor = info.mode ? MODE_COLORS[info.mode] : '#6E9FC8';
+      const dots = [];
+      const times = [];
+
+      if(info.training) {
+        dots.push(`<div class="cal-dot" style="background:${trainingColor}"></div>`);
+        if(info.minsFuerza) times.push(`<span style="font-size:.48rem;color:${trainingColor};font-family:'DM Mono',monospace;line-height:1.2">${info.minsFuerza}m</span>`);
       }
+      if(info.postural) {
+        dots.push(`<div class="cal-dot" style="background:${POSTURAL_COLOR}"></div>`);
+        if(info.minsPostural) times.push(`<span style="font-size:.48rem;color:${POSTURAL_COLOR};font-family:'DM Mono',monospace;line-height:1.2">${info.minsPostural}m</span>`);
+      }
+      if(info.running) {
+        dots.push(`<div class="cal-dot" style="background:#FF8C00"></div>`);
+        const runLabel = info.kmRun ? `${info.kmRun}k` : info.minsRun ? `${info.minsRun}m` : '';
+        if(runLabel) times.push(`<span style="font-size:.48rem;color:#FF8C00;font-family:'DM Mono',monospace;line-height:1.2">${runLabel}</span>`);
+      }
+
+      dotHtml = `<div class="cal-dots">${dots.join('')}</div>
+                 <div style="display:flex;gap:3px;justify-content:center;flex-wrap:wrap">${times.join('')}</div>`;
+
+      // Background uses training color if present, else postural
+      const bgColor = info.training ? trainingColor : POSTURAL_COLOR;
+      cellStyle = `background:${bgColor}18`;
     }
 
     html += `<div class="cal-day${isToday?' cal-today':''}" style="${cellStyle}">
@@ -815,8 +995,9 @@ function renderCalendar() {
     <div class="cal-legend">
       <span class="cal-leg-item"><span class="cal-dot" style="background:#52B788;display:inline-block"></span> Postural</span>
       <span class="cal-leg-item"><span class="cal-dot" style="background:#C8A96E;display:inline-block"></span> Rápido</span>
-      <span class="cal-leg-item"><span class="cal-dot" style="background:#52B788;display:inline-block"></span> Normal</span>
+      <span class="cal-leg-item"><span class="cal-dot" style="background:#6E9FC8;display:inline-block"></span> Normal</span>
       <span class="cal-leg-item"><span class="cal-dot" style="background:#A86EC8;display:inline-block"></span> Extensivo</span>
+      <span class="cal-leg-item"><span class="cal-dot" style="background:#FF8C00;display:inline-block"></span> Correr</span>
     </div>`;
 
   cal.innerHTML = html;
@@ -866,7 +1047,8 @@ function selectMode(mode) { S.mode = mode; renderModeScreen(); }
 // ════════════════════════════════════════
 function openDay(dayId) {
   const day = DAYS.find(d=>d.id===dayId);
-  S.currentDay = day;
+  S.currentDay  = day;
+  S.sessionStart = Date.now();
   S.doneEx     = new Set();
   S.serieState = {};
   Object.values(S.timers).forEach(t=>clearInterval(t));
@@ -950,8 +1132,9 @@ function openDay(dayId) {
 // POSTURAL
 // ════════════════════════════════════════
 function renderPostural() {
-  S.doneEx     = new Set();
-  S.serieState = {};
+  S.doneEx      = new Set();
+  S.sessionStart = Date.now();
+  S.serieState  = {};
   Object.values(S.timers).forEach(t=>clearInterval(t));
   S.timers = {};
 
@@ -1114,16 +1297,22 @@ function updateProgress() {
   document.getElementById('tr-pfill').style.width  = (total ? done/total*100 : 0)+'%';
   document.getElementById('tr-plabel').textContent = done+'/'+total;
   if(done===total && total>0){
-    document.getElementById('complete-banner').classList.add('show');
-    document.getElementById('complete-banner').scrollIntoView({behavior:'smooth'});
+    const secs = S.sessionStart ? Math.round((Date.now()-S.sessionStart)/1000) : 0;
+    const mins = Math.floor(secs/60);
+    const durStr = mins > 0 ? `${mins} min` : `${secs} seg`;
+    const banner = document.getElementById('complete-banner');
+    banner.classList.add('show');
+    const durEl = document.getElementById('cb-duration');
+    if(durEl) durEl.textContent = `⏱ Sesión completada en ${durStr}`;
+    banner.scrollIntoView({behavior:'smooth'});
     S.done['day'+S.currentDay.id] = true;
     saveLocal();
-    // Save to Supabase
     supaInsert({
-      user_code:    S.userCode,
-      session_type: 'training',
-      day_id:       S.currentDay.id,
-      mode:         S.mode
+      user_code:        S.userCode,
+      session_type:     'training',
+      day_id:           S.currentDay.id,
+      mode:             S.mode,
+      duration_minutes: mins || 1
     });
   }
 }
@@ -1135,15 +1324,21 @@ function updatePosturalProgress() {
   document.getElementById('post-pfill').style.width  = (total ? done/total*100 : 0)+'%';
   document.getElementById('post-plabel').textContent = done+'/'+total;
   if(done===total && total>0){
-    document.getElementById('postural-done').classList.add('show');
-    document.getElementById('postural-done').scrollIntoView({behavior:'smooth'});
+    const secs = S.sessionStart ? Math.round((Date.now()-S.sessionStart)/1000) : 0;
+    const mins = Math.floor(secs/60);
+    const durStr = mins > 0 ? `${mins} min` : `${secs} seg`;
+    const doneBanner = document.getElementById('postural-done');
+    doneBanner.classList.add('show');
+    const durEl = document.getElementById('post-duration');
+    if(durEl) durEl.textContent = `⏱ ${durStr}`;
+    doneBanner.scrollIntoView({behavior:'smooth'});
     saveLocal();
-    // Save to Supabase
     supaInsert({
-      user_code:    S.userCode,
-      session_type: 'postural',
-      day_id:       null,
-      mode:         null
+      user_code:        S.userCode,
+      session_type:     'postural',
+      day_id:           null,
+      mode:             null,
+      duration_minutes: mins || 1
     });
   }
 }
@@ -1188,6 +1383,129 @@ function resetTmr(e, id, dur) {
   if(disp) disp.textContent = fmt(dur);
   const btn = document.getElementById('tgo-'+id);
   if(btn){ btn.textContent='▶ Start'; btn.onclick=ev=>{ev.stopPropagation();startTmr(ev,id,dur);}; }
+}
+
+// ════════════════════════════════════════
+// RUNNING
+// ════════════════════════════════════════
+function openRunning() {
+  resetRunForm();
+  renderRunHistory();
+  showView('view-running');
+}
+
+function resetRunForm() {
+  document.getElementById('run-km').value  = '';
+  document.getElementById('run-h').value   = '';
+  document.getElementById('run-min').value = '';
+  document.getElementById('run-sec').value = '';
+  document.getElementById('run-preview').style.display = 'none';
+  document.getElementById('run-err').textContent = '';
+  document.getElementById('run-form').style.display = 'block';
+  document.getElementById('run-success').style.display = 'none';
+}
+
+function updateRunPreview() {
+  const km   = parseFloat(document.getElementById('run-km').value)  || 0;
+  const h    = parseInt(document.getElementById('run-h').value)    || 0;
+  const min  = parseInt(document.getElementById('run-min').value)  || 0;
+  const sec  = parseInt(document.getElementById('run-sec').value)  || 0;
+  const totalSecs = h*3600 + min*60 + sec;
+
+  const preview = document.getElementById('run-preview');
+  if(km > 0 && totalSecs > 0) {
+    preview.style.display = 'block';
+    const secsPerKm = totalSecs / km;
+    const paceMin   = Math.floor(secsPerKm / 60);
+    const paceSec   = Math.round(secsPerKm % 60);
+    const speed     = (km / (totalSecs / 3600)).toFixed(1);
+    document.getElementById('run-pace').textContent  = `${paceMin}:${paceSec<10?'0':''}${paceSec}`;
+    document.getElementById('run-speed').textContent = speed;
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+async function saveRun() {
+  const km   = parseFloat(document.getElementById('run-km').value)  || 0;
+  const h    = parseInt(document.getElementById('run-h').value)    || 0;
+  const min  = parseInt(document.getElementById('run-min').value)  || 0;
+  const sec  = parseInt(document.getElementById('run-sec').value)  || 0;
+  const totalSecs = h*3600 + min*60 + sec;
+  const totalMins = Math.round(totalSecs / 60) || 1;
+
+  const err = document.getElementById('run-err');
+  if(km <= 0 && totalSecs <= 0) { err.textContent = 'Introduce distancia o duración.'; return; }
+  if(km < 0)         { err.textContent = 'La distancia no puede ser negativa.'; return; }
+  if(totalSecs < 0)  { err.textContent = 'La duración no puede ser negativa.'; return; }
+  err.textContent = '';
+
+  const btn = document.querySelector('#run-form button[onclick="saveRun()"]');
+  btn.textContent = 'Guardando…';
+  btn.style.opacity = '.6';
+
+  const ok = await supaInsert({
+    user_code:        S.userCode,
+    session_type:     'running',
+    day_id:           null,
+    mode:             null,
+    duration_minutes: totalMins,
+    distance_km:      km > 0 ? km : null
+  });
+
+  btn.textContent = 'Guardar sesión →';
+  btn.style.opacity = '1';
+
+  if(ok) {
+    // Build success detail string
+    const parts = [];
+    if(km > 0) parts.push(`${km} km`);
+    if(totalSecs > 0) {
+      const durStr = h > 0 ? `${h}h ${min}min` : min > 0 ? `${min}min ${sec}s` : `${sec}s`;
+      parts.push(durStr);
+    }
+    if(km > 0 && totalSecs > 0) {
+      const speed = (km / (totalSecs/3600)).toFixed(1);
+      parts.push(`${speed} km/h`);
+    }
+    document.getElementById('run-success-detail').textContent = parts.join(' · ');
+    document.getElementById('run-form').style.display    = 'none';
+    document.getElementById('run-success').style.display = 'block';
+    // Refresh sessions for calendar
+    supaFetch(S.userCode).then(sessions => { S.sessions = sessions; });
+  } else {
+    err.textContent = 'Error al guardar. Comprueba tu conexión.';
+  }
+}
+
+async function renderRunHistory() {
+  const el = document.getElementById('run-history');
+  el.innerHTML = '<div style="font-size:.78rem;color:var(--muted)">Cargando…</div>';
+  const all = S.sessions.length ? S.sessions : await supaFetch(S.userCode);
+  const runs = all
+    .filter(s => s.session_type === 'running')
+    .sort((a,b) => new Date(b.completed_at) - new Date(a.completed_at))
+    .slice(0, 10);
+
+  if(!runs.length) { el.innerHTML = '<div style="font-size:.78rem;color:var(--muted)">Sin sesiones todavía.</div>'; return; }
+
+  el.innerHTML = runs.map(r => {
+    const d     = new Date(r.completed_at);
+    const date  = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+    const parts = [];
+    if(r.distance_km) parts.push(`${r.distance_km} km`);
+    if(r.duration_minutes) parts.push(`${r.duration_minutes} min`);
+    if(r.distance_km && r.duration_minutes) {
+      const speed = (r.distance_km / (r.duration_minutes/60)).toFixed(1);
+      parts.push(`${speed} km/h`);
+    }
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:.7rem .9rem;background:var(--surface);border-radius:10px;margin-bottom:.4rem;border:1px solid var(--border)">
+      <div>
+        <div style="font-size:.7rem;color:var(--muted);margin-bottom:.15rem">${date}</div>
+        <div style="font-size:.85rem;font-weight:700;color:#FF8C00">🏃 ${parts.join(' · ') || '—'}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ════════════════════════════════════════
