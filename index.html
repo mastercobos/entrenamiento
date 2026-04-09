@@ -910,7 +910,11 @@ function renderCalendar() {
   S.sessions.forEach(s => {
     const d   = new Date(s.completed_at);
     const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+<<<<<<< HEAD
     if(!dayMap[key]) dayMap[key] = { postural:false, training:false, running:false, mode:null, minsFuerza:null, minsPostural:null, minsRun:null, kmRun:null };
+=======
+    if(!dayMap[key]) dayMap[key] = { postural:false, training:false, mode:null, minsFuerza:null, minsPostural:null };
+>>>>>>> a6421d0b0ff880fab92eea9071dddcda00ec1a78
     if(s.session_type==='postural') {
       dayMap[key].postural = true;
       if(s.duration_minutes) dayMap[key].minsPostural = s.duration_minutes;
@@ -920,11 +924,14 @@ function renderCalendar() {
       dayMap[key].mode = s.mode;
       if(s.duration_minutes) dayMap[key].minsFuerza = s.duration_minutes;
     }
+<<<<<<< HEAD
     if(s.session_type==='running') {
       dayMap[key].running = true;
       if(s.duration_minutes) dayMap[key].minsRun = s.duration_minutes;
       if(s.distance_km)      dayMap[key].kmRun   = s.distance_km;
     }
+=======
+>>>>>>> a6421d0b0ff880fab92eea9071dddcda00ec1a78
   });
 
   const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -971,11 +978,14 @@ function renderCalendar() {
         dots.push(`<div class="cal-dot" style="background:${POSTURAL_COLOR}"></div>`);
         if(info.minsPostural) times.push(`<span style="font-size:.48rem;color:${POSTURAL_COLOR};font-family:'DM Mono',monospace;line-height:1.2">${info.minsPostural}m</span>`);
       }
+<<<<<<< HEAD
       if(info.running) {
         dots.push(`<div class="cal-dot" style="background:#FF8C00"></div>`);
         const runLabel = info.kmRun ? `${info.kmRun}k` : info.minsRun ? `${info.minsRun}m` : '';
         if(runLabel) times.push(`<span style="font-size:.48rem;color:#FF8C00;font-family:'DM Mono',monospace;line-height:1.2">${runLabel}</span>`);
       }
+=======
+>>>>>>> a6421d0b0ff880fab92eea9071dddcda00ec1a78
 
       dotHtml = `<div class="cal-dots">${dots.join('')}</div>
                  <div style="display:flex;gap:3px;justify-content:center;flex-wrap:wrap">${times.join('')}</div>`;
