@@ -227,12 +227,38 @@ body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-he
 .cal-leg-item{display:flex;align-items:center;gap:.3rem;font-size:.62rem;color:var(--muted);font-weight:600}
 .cal-leg-item .cal-dot{width:6px;height:6px}
 
-/* running card */
-.scard-running { background: linear-gradient(135deg,#1a0e00 0%,#120a00 100%); }
-
 /* user code chip */
 .user-chip{display:inline-flex;align-items:center;gap:.4rem;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:.25rem .7rem;font-size:.65rem;font-weight:700;color:var(--muted);cursor:pointer;letter-spacing:.08em}
 .user-chip:active{opacity:.7}
+/* ═══ RUNNING VIEW ═══ */
+.run-screen { padding: 1.4rem 1.4rem 6rem; flex: 1; }
+.run-back { background:none; border:none; cursor:pointer; font-family:'Syne',sans-serif; font-size:.78rem; color:var(--muted); display:flex; align-items:center; gap:.4rem; padding:0; margin-bottom:1.8rem; transition:color .2s; }
+.run-back:hover { color:var(--text); }
+.run-title { font-size:1.8rem; font-weight:800; margin-bottom:.3rem; }
+.run-sub { font-size:.85rem; color:var(--muted); margin-bottom:2rem; line-height:1.5; }
+.run-inputs { display:flex; flex-direction:column; gap:1rem; margin-bottom:1.5rem; }
+.run-field { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+.run-field-label { font-size:.62rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); padding:.7rem 1rem .2rem; }
+.run-field-row { display:flex; align-items:center; padding:.2rem 1rem .7rem; gap:.5rem; }
+.run-input { flex:1; background:none; border:none; outline:none; font-family:'DM Mono',monospace; font-size:2rem; font-weight:500; color:var(--text); min-width:0; }
+.run-input::placeholder { color:var(--muted2); }
+.run-unit { font-size:.85rem; font-weight:700; color:var(--muted); flex-shrink:0; }
+.run-pace { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:.8rem 1rem; display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; }
+.run-pace-label { font-size:.65rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+.run-pace-val { font-family:'DM Mono',monospace; font-size:1.1rem; font-weight:500; color:#FF8C42; }
+.run-save-btn { width:100%; padding:.9rem; border:none; border-radius:14px; background:#FF8C42; color:#1a0a00; font-family:'Syne',sans-serif; font-size:.95rem; font-weight:800; cursor:pointer; letter-spacing:.05em; transition:opacity .2s; }
+.run-save-btn:active { opacity:.8; }
+.run-save-btn:disabled { opacity:.35; cursor:default; }
+.run-history { margin-top:1.5rem; }
+.run-history-title { font-size:.65rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:.6rem; }
+.run-entry { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:.8rem 1rem; margin-bottom:.5rem; display:flex; justify-content:space-between; align-items:center; }
+.run-entry-main { font-family:'DM Mono',monospace; font-size:.95rem; font-weight:500; }
+.run-entry-sub { font-size:.65rem; color:var(--muted); margin-top:.2rem; }
+.run-entry-pace { font-size:.78rem; font-weight:700; color:#FF8C42; font-family:'DM Mono',monospace; }
+.run-saved-msg { text-align:center; padding:1.5rem; background:rgba(255,140,66,.08); border:1px solid rgba(255,140,66,.2); border-radius:14px; margin-top:1rem; display:none; }
+.run-saved-msg.show { display:block; }
+.run-saved-icon { font-size:2rem; margin-bottom:.5rem; }
+.run-saved-text { font-size:.9rem; font-weight:700; color:#FF8C42; }
 </style>
 </head>
 <body>
@@ -300,106 +326,21 @@ body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-he
       <div class="scard-meta" id="home-day-chips"></div>
       <div class="scard-arrow">→</div>
     </div>
+
     <!-- RUNNING -->
-    <div class="scard scard-running" onclick="openRunning()">
-      <div class="scard-glow" style="background:radial-gradient(circle,rgba(255,140,0,.12) 0%,transparent 70%)"></div>
-      <div class="scard-tag" style="color:#FF8C00">Cardio</div>
-      <div class="scard-title" style="color:#FF8C00">Correr</div>
-      <div class="scard-sub">Registra tiempo y distancia · Se guarda en tu historial</div>
-      <div class="scard-meta" id="home-run-chips"></div>
-      <div class="scard-arrow">→</div>
-    </div>
-  </div>
-
-</div>
-
-<!-- ══════════════ RUNNING ══════════════ -->
-<div id="view-running" class="view">
-  <div class="tr-header" style="border-bottom-color:rgba(255,140,0,.25)">
-    <button class="tr-back" onclick="showView('view-home')">← Inicio</button>
-    <div class="tr-top">
-      <div>
-        <div class="tr-day-tag" style="color:#FF8C00">Cardio</div>
-        <div class="tr-title">Correr</div>
+    <div class="scard" style="background:linear-gradient(135deg,#1a0e05,#120a03);border-color:rgba(255,140,66,.15)" onclick="openRunning()">
+      <div class="scard-tag" style="color:#FF8C42">Registro manual</div>
+      <div class="scard-title" style="color:#FF8C42">Correr</div>
+      <div class="scard-sub">Apunta tiempo y distancia · Calcula tu ritmo automáticamente</div>
+      <div class="scard-meta">
+        <span class="scard-chip" style="background:rgba(255,140,66,.12);color:#FF8C42">Guardado en Supabase</span>
       </div>
-    </div>
-  </div>
-  <div style="padding:1.4rem 1.4rem 2rem;flex:1;overflow-y:auto">
-    <div id="run-form">
-      <div style="margin-bottom:1.4rem">
-        <div style="font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:.6rem">Distancia</div>
-        <div style="display:flex;align-items:center;gap:.8rem">
-          <input id="run-km" type="number" min="0" max="999" step="0.1" placeholder="0.0"
-            style="flex:1;padding:.9rem 1rem;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:2rem;font-weight:500;outline:none;text-align:center"
-            oninput="updateRunPreview()"/>
-          <span style="font-size:1.1rem;font-weight:700;color:rgba(255,255,255,.4)">km</span>
-        </div>
-      </div>
-      <div style="margin-bottom:1.8rem">
-        <div style="font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:.6rem">Duración</div>
-        <div style="display:flex;align-items:center;gap:.5rem">
-          <div style="flex:1;display:flex;flex-direction:column;align-items:center">
-            <input id="run-h" type="number" min="0" max="23" step="1" placeholder="0"
-              style="width:100%;padding:.8rem .5rem;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:500;outline:none;text-align:center"
-              oninput="updateRunPreview()"/>
-            <span style="font-size:.6rem;color:var(--muted);margin-top:.3rem;font-weight:700;letter-spacing:.08em">HORAS</span>
-          </div>
-          <span style="font-size:1.8rem;color:rgba(255,255,255,.25);padding-bottom:1.2rem">:</span>
-          <div style="flex:1;display:flex;flex-direction:column;align-items:center">
-            <input id="run-min" type="number" min="0" max="59" step="1" placeholder="00"
-              style="width:100%;padding:.8rem .5rem;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:500;outline:none;text-align:center"
-              oninput="updateRunPreview()"/>
-            <span style="font-size:.6rem;color:var(--muted);margin-top:.3rem;font-weight:700;letter-spacing:.08em">MIN</span>
-          </div>
-          <span style="font-size:1.8rem;color:rgba(255,255,255,.25);padding-bottom:1.2rem">:</span>
-          <div style="flex:1;display:flex;flex-direction:column;align-items:center">
-            <input id="run-sec" type="number" min="0" max="59" step="1" placeholder="00"
-              style="width:100%;padding:.8rem .5rem;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:500;outline:none;text-align:center"
-              oninput="updateRunPreview()"/>
-            <span style="font-size:.6rem;color:var(--muted);margin-top:.3rem;font-weight:700;letter-spacing:.08em">SEG</span>
-          </div>
-        </div>
-      </div>
-      <div id="run-preview" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1rem 1.2rem;margin-bottom:1.4rem;display:none">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem">
-          <div>
-            <div style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:.2rem">Ritmo</div>
-            <div id="run-pace" style="font-family:'DM Mono',monospace;font-size:1.3rem;color:#FF8C00;font-weight:500">—</div>
-            <div style="font-size:.6rem;color:var(--muted)">min/km</div>
-          </div>
-          <div>
-            <div style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:.2rem">Velocidad</div>
-            <div id="run-speed" style="font-family:'DM Mono',monospace;font-size:1.3rem;color:#FF8C00;font-weight:500">—</div>
-            <div style="font-size:.6rem;color:var(--muted)">km/h</div>
-          </div>
-        </div>
-      </div>
-      <div id="run-err" style="font-size:.75rem;color:var(--injury);margin-bottom:.8rem;min-height:1rem"></div>
-      <button onclick="saveRun()"
-        style="width:100%;padding:.85rem;border-radius:12px;border:none;background:#FF8C00;color:#1a0800;font-family:'Syne',sans-serif;font-size:.9rem;font-weight:800;cursor:pointer;letter-spacing:.06em">
-        Guardar sesión →
-      </button>
-    </div>
-    <div id="run-success" style="display:none;text-align:center;padding:2rem 0">
-      <div style="font-size:2.5rem;margin-bottom:.8rem">🏃</div>
-      <div style="font-size:1.3rem;font-weight:800;margin-bottom:.4rem;color:#FF8C00">¡Guardado!</div>
-      <div id="run-success-detail" style="font-size:.88rem;color:var(--muted);line-height:1.6;margin-bottom:1.4rem"></div>
-      <button onclick="resetRunForm()"
-        style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:.7rem 1.4rem;font-size:.82rem;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;color:var(--text);margin-right:.6rem">
-        + Otra sesión
-      </button>
-      <button onclick="showView('view-home')"
-        style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:.7rem 1.4rem;font-size:.82rem;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;color:var(--text)">
-        ← Inicio
-      </button>
-    </div>
-    <div style="margin-top:1.8rem">
-      <div style="font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:.8rem">Últimas sesiones</div>
-      <div id="run-history"></div>
+      <div class="scard-arrow" style="color:#FF8C42">→</div>
     </div>
   </div>
 </div>
 
+<!-- ══════════════ MODE SELECT ══════════════ -->
 <div id="view-mode" class="view">
   <div class="mode-screen">
     <button class="mode-back" onclick="showView('view-home')">← Volver</button>
@@ -514,6 +455,58 @@ body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-he
       <div class="tb-time-label">Duración</div>
       <div class="tb-time">~10 min</div>
     </div>
+  </div>
+</div>
+
+<!-- ══════════════ RUNNING ══════════════ -->
+<div id="view-running" class="view">
+  <div class="run-screen">
+    <button class="run-back" onclick="showView('view-home')">← Inicio</button>
+    <div class="run-title" style="color:#FF8C42">🏃 Correr</div>
+    <div class="run-sub">Registra tu salida. El ritmo se calcula solo.</div>
+
+    <div class="run-inputs">
+      <div class="run-field">
+        <div class="run-field-label">Distancia</div>
+        <div class="run-field-row">
+          <input class="run-input" id="run-distance" type="number" min="0" step="0.01" placeholder="0.00" oninput="updatePace()">
+          <span class="run-unit">km</span>
+        </div>
+      </div>
+      <div class="run-field">
+        <div class="run-field-label">Tiempo</div>
+        <div class="run-field-row" style="gap:.3rem">
+          <input class="run-input" id="run-hours" type="number" min="0" max="23" step="1" placeholder="0" style="font-size:1.6rem" oninput="updatePace()">
+          <span class="run-unit" style="font-size:1.2rem">h</span>
+          <input class="run-input" id="run-minutes" type="number" min="0" max="59" step="1" placeholder="00" style="font-size:1.6rem" oninput="updatePace()">
+          <span class="run-unit" style="font-size:1.2rem">min</span>
+          <input class="run-input" id="run-seconds" type="number" min="0" max="59" step="1" placeholder="00" style="font-size:1.6rem" oninput="updatePace()">
+          <span class="run-unit" style="font-size:1.2rem">seg</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="run-pace">
+      <div>
+        <div class="run-pace-label">Ritmo medio</div>
+        <div class="run-pace-val" id="run-pace-display">— min/km</div>
+      </div>
+      <div style="text-align:right">
+        <div class="run-pace-label">Velocidad</div>
+        <div class="run-pace-val" id="run-speed-display">— km/h</div>
+      </div>
+    </div>
+
+    <button class="run-save-btn" id="run-save-btn" onclick="saveRun()" disabled>
+      Guardar salida
+    </button>
+
+    <div class="run-saved-msg" id="run-saved-msg">
+      <div class="run-saved-icon">🏅</div>
+      <div class="run-saved-text">¡Salida guardada!</div>
+    </div>
+
+    <div class="run-history" id="run-history"></div>
   </div>
 </div>
 
@@ -872,26 +865,11 @@ async function renderHome() {
 
 function renderHomeChips() {
   const chips = document.getElementById('home-day-chips');
-  if(chips) {
-    chips.innerHTML = DAYS.map(d => {
-      const done = S.done['day'+d.id];
-      return `<span class="scard-chip" style="background:${done?d.dark:'var(--surface2)'};color:${done?d.color:'var(--muted)'};border:1px solid ${d.color}33">${done?'✓ ':''} ${d.label}</span>`;
-    }).join('');
-  }
-  // Last run chip
-  const runChips = document.getElementById('home-run-chips');
-  if(runChips) {
-    const lastRun = S.sessions.filter(s=>s.session_type==='running')[0];
-    if(lastRun) {
-      const parts = [];
-      if(lastRun.distance_km)      parts.push(`${lastRun.distance_km} km`);
-      if(lastRun.duration_minutes) parts.push(`${lastRun.duration_minutes} min`);
-      const d = new Date(lastRun.completed_at);
-      runChips.innerHTML = `<span class="scard-chip" style="background:rgba(255,140,0,.1);color:#FF8C00;border:1px solid rgba(255,140,0,.2)">Última: ${parts.join(' · ')} · ${d.getDate()}/${d.getMonth()+1}</span>`;
-    } else {
-      runChips.innerHTML = `<span class="scard-chip" style="background:var(--surface2);color:var(--muted)">Sin sesiones todavía</span>`;
-    }
-  }
+  if(!chips) return;
+  chips.innerHTML = DAYS.map(d => {
+    const done = S.done['day'+d.id];
+    return `<span class="scard-chip" style="background:${done?d.dark:'var(--surface2)'};color:${done?d.color:'var(--muted)'};border:1px solid ${d.color}33">${done?'✓ ':''} ${d.label}</span>`;
+  }).join('');
 }
 
 // ════════════════════════════════════════
@@ -910,11 +888,7 @@ function renderCalendar() {
   S.sessions.forEach(s => {
     const d   = new Date(s.completed_at);
     const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-<<<<<<< HEAD
-    if(!dayMap[key]) dayMap[key] = { postural:false, training:false, running:false, mode:null, minsFuerza:null, minsPostural:null, minsRun:null, kmRun:null };
-=======
-    if(!dayMap[key]) dayMap[key] = { postural:false, training:false, mode:null, minsFuerza:null, minsPostural:null };
->>>>>>> a6421d0b0ff880fab92eea9071dddcda00ec1a78
+    if(!dayMap[key]) dayMap[key] = { postural:false, training:false, running:false, mode:null, minsFuerza:null, minsPostural:null, minsRunning:null, kmRunning:null };
     if(s.session_type==='postural') {
       dayMap[key].postural = true;
       if(s.duration_minutes) dayMap[key].minsPostural = s.duration_minutes;
@@ -924,14 +898,11 @@ function renderCalendar() {
       dayMap[key].mode = s.mode;
       if(s.duration_minutes) dayMap[key].minsFuerza = s.duration_minutes;
     }
-<<<<<<< HEAD
     if(s.session_type==='running') {
       dayMap[key].running = true;
-      if(s.duration_minutes) dayMap[key].minsRun = s.duration_minutes;
-      if(s.distance_km)      dayMap[key].kmRun   = s.distance_km;
+      if(s.duration_minutes) dayMap[key].minsRunning = s.duration_minutes;
+      if(s.distance_km)      dayMap[key].kmRunning   = s.distance_km;
     }
-=======
->>>>>>> a6421d0b0ff880fab92eea9071dddcda00ec1a78
   });
 
   const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -967,6 +938,7 @@ function renderCalendar() {
     let cellStyle = '';
     if(info) {
       const trainingColor = info.mode ? MODE_COLORS[info.mode] : '#6E9FC8';
+      const RUNNING_COLOR = '#FF8C42';
       const dots = [];
       const times = [];
 
@@ -978,20 +950,16 @@ function renderCalendar() {
         dots.push(`<div class="cal-dot" style="background:${POSTURAL_COLOR}"></div>`);
         if(info.minsPostural) times.push(`<span style="font-size:.48rem;color:${POSTURAL_COLOR};font-family:'DM Mono',monospace;line-height:1.2">${info.minsPostural}m</span>`);
       }
-<<<<<<< HEAD
       if(info.running) {
-        dots.push(`<div class="cal-dot" style="background:#FF8C00"></div>`);
-        const runLabel = info.kmRun ? `${info.kmRun}k` : info.minsRun ? `${info.minsRun}m` : '';
-        if(runLabel) times.push(`<span style="font-size:.48rem;color:#FF8C00;font-family:'DM Mono',monospace;line-height:1.2">${runLabel}</span>`);
+        dots.push(`<div class="cal-dot" style="background:${RUNNING_COLOR}"></div>`);
+        const runLabel = info.kmRunning ? `${info.kmRunning}k` : `${info.minsRunning}m`;
+        times.push(`<span style="font-size:.48rem;color:${RUNNING_COLOR};font-family:'DM Mono',monospace;line-height:1.2">${runLabel}</span>`);
       }
-=======
->>>>>>> a6421d0b0ff880fab92eea9071dddcda00ec1a78
 
       dotHtml = `<div class="cal-dots">${dots.join('')}</div>
                  <div style="display:flex;gap:3px;justify-content:center;flex-wrap:wrap">${times.join('')}</div>`;
 
-      // Background uses training color if present, else postural
-      const bgColor = info.training ? trainingColor : POSTURAL_COLOR;
+      const bgColor = info.training ? trainingColor : info.running ? RUNNING_COLOR : POSTURAL_COLOR;
       cellStyle = `background:${bgColor}18`;
     }
 
@@ -1007,7 +975,7 @@ function renderCalendar() {
       <span class="cal-leg-item"><span class="cal-dot" style="background:#C8A96E;display:inline-block"></span> Rápido</span>
       <span class="cal-leg-item"><span class="cal-dot" style="background:#6E9FC8;display:inline-block"></span> Normal</span>
       <span class="cal-leg-item"><span class="cal-dot" style="background:#A86EC8;display:inline-block"></span> Extensivo</span>
-      <span class="cal-leg-item"><span class="cal-dot" style="background:#FF8C00;display:inline-block"></span> Correr</span>
+      <span class="cal-leg-item"><span class="cal-dot" style="background:#FF8C42;display:inline-block"></span> Correr</span>
     </div>`;
 
   cal.innerHTML = html;
@@ -1016,6 +984,126 @@ function renderCalendar() {
 function shiftMonth(delta) {
   S.calMonth = new Date(S.calMonth.getFullYear(), S.calMonth.getMonth()+delta, 1);
   renderCalendar();
+}
+
+// ════════════════════════════════════════
+// RUNNING
+// ════════════════════════════════════════
+function openRunning() {
+  // Clear inputs
+  ['run-distance','run-hours','run-minutes','run-seconds'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('run-pace-display').textContent  = '— min/km';
+  document.getElementById('run-speed-display').textContent = '— km/h';
+  document.getElementById('run-save-btn').disabled = true;
+  document.getElementById('run-saved-msg').classList.remove('show');
+  renderRunHistory();
+  showView('view-running');
+}
+
+function updatePace() {
+  const dist = parseFloat(document.getElementById('run-distance').value) || 0;
+  const h    = parseInt(document.getElementById('run-hours').value)   || 0;
+  const m    = parseInt(document.getElementById('run-minutes').value) || 0;
+  const sec  = parseInt(document.getElementById('run-seconds').value) || 0;
+  const totalSecs = h*3600 + m*60 + sec;
+
+  const btn = document.getElementById('run-save-btn');
+  btn.disabled = !(dist > 0 && totalSecs > 0);
+
+  if(dist > 0 && totalSecs > 0) {
+    // Pace: min per km
+    const paceSecPerKm = totalSecs / dist;
+    const paceMin = Math.floor(paceSecPerKm / 60);
+    const paceSec = Math.round(paceSecPerKm % 60);
+    document.getElementById('run-pace-display').textContent =
+      `${paceMin}:${paceSec < 10 ? '0' : ''}${paceSec} min/km`;
+
+    // Speed: km/h
+    const speed = (dist / totalSecs * 3600).toFixed(1);
+    document.getElementById('run-speed-display').textContent = `${speed} km/h`;
+  } else {
+    document.getElementById('run-pace-display').textContent  = '— min/km';
+    document.getElementById('run-speed-display').textContent = '— km/h';
+  }
+}
+
+async function saveRun() {
+  const dist = parseFloat(document.getElementById('run-distance').value) || 0;
+  const h    = parseInt(document.getElementById('run-hours').value)   || 0;
+  const m    = parseInt(document.getElementById('run-minutes').value) || 0;
+  const sec  = parseInt(document.getElementById('run-seconds').value) || 0;
+  const totalSecs = h*3600 + m*60 + sec;
+  const totalMins = Math.round(totalSecs / 60) || 1;
+
+  if(!dist || !totalSecs) return;
+
+  const btn = document.getElementById('run-save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Guardando…';
+
+  const ok = await supaInsert({
+    user_code:        S.userCode,
+    session_type:     'running',
+    day_id:           null,
+    mode:             null,
+    duration_minutes: totalMins,
+    distance_km:      dist
+  });
+
+  if(ok) {
+    // Add to local sessions cache
+    S.sessions.unshift({
+      user_code: S.userCode, session_type:'running',
+      duration_minutes: totalMins, distance_km: dist,
+      completed_at: new Date().toISOString()
+    });
+    document.getElementById('run-saved-msg').classList.add('show');
+    // Clear inputs after save
+    ['run-distance','run-hours','run-minutes','run-seconds'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('run-pace-display').textContent  = '— min/km';
+    document.getElementById('run-speed-display').textContent = '— km/h';
+    renderRunHistory();
+    renderCalendar();
+  }
+
+  btn.textContent = 'Guardar salida';
+  btn.disabled = false;
+}
+
+function renderRunHistory() {
+  const el = document.getElementById('run-history');
+  if(!el) return;
+
+  const runs = S.sessions.filter(s => s.session_type === 'running').slice(0, 10);
+  if(!runs.length) { el.innerHTML = ''; return; }
+
+  const fmt = (s) => {
+    const d = new Date(s.completed_at);
+    return d.toLocaleDateString('es-ES', { day:'numeric', month:'short' });
+  };
+
+  const fmtPace = (dist, mins) => {
+    if(!dist || !mins) return '—';
+    const secPerKm = (mins * 60) / dist;
+    const pm = Math.floor(secPerKm / 60);
+    const ps = Math.round(secPerKm % 60);
+    return `${pm}:${ps < 10 ? '0' : ''}${ps}`;
+  };
+
+  el.innerHTML = `
+    <div class="run-history-title">Últimas salidas</div>
+    ${runs.map(r => `
+      <div class="run-entry">
+        <div>
+          <div class="run-entry-main">${r.distance_km ? r.distance_km + ' km' : '—'} · ${r.duration_minutes} min</div>
+          <div class="run-entry-sub">${fmt(r)}</div>
+        </div>
+        <div class="run-entry-pace">${fmtPace(r.distance_km, r.duration_minutes)} min/km</div>
+      </div>`).join('')}`;
 }
 
 // ════════════════════════════════════════
@@ -1393,129 +1481,6 @@ function resetTmr(e, id, dur) {
   if(disp) disp.textContent = fmt(dur);
   const btn = document.getElementById('tgo-'+id);
   if(btn){ btn.textContent='▶ Start'; btn.onclick=ev=>{ev.stopPropagation();startTmr(ev,id,dur);}; }
-}
-
-// ════════════════════════════════════════
-// RUNNING
-// ════════════════════════════════════════
-function openRunning() {
-  resetRunForm();
-  renderRunHistory();
-  showView('view-running');
-}
-
-function resetRunForm() {
-  document.getElementById('run-km').value  = '';
-  document.getElementById('run-h').value   = '';
-  document.getElementById('run-min').value = '';
-  document.getElementById('run-sec').value = '';
-  document.getElementById('run-preview').style.display = 'none';
-  document.getElementById('run-err').textContent = '';
-  document.getElementById('run-form').style.display = 'block';
-  document.getElementById('run-success').style.display = 'none';
-}
-
-function updateRunPreview() {
-  const km   = parseFloat(document.getElementById('run-km').value)  || 0;
-  const h    = parseInt(document.getElementById('run-h').value)    || 0;
-  const min  = parseInt(document.getElementById('run-min').value)  || 0;
-  const sec  = parseInt(document.getElementById('run-sec').value)  || 0;
-  const totalSecs = h*3600 + min*60 + sec;
-
-  const preview = document.getElementById('run-preview');
-  if(km > 0 && totalSecs > 0) {
-    preview.style.display = 'block';
-    const secsPerKm = totalSecs / km;
-    const paceMin   = Math.floor(secsPerKm / 60);
-    const paceSec   = Math.round(secsPerKm % 60);
-    const speed     = (km / (totalSecs / 3600)).toFixed(1);
-    document.getElementById('run-pace').textContent  = `${paceMin}:${paceSec<10?'0':''}${paceSec}`;
-    document.getElementById('run-speed').textContent = speed;
-  } else {
-    preview.style.display = 'none';
-  }
-}
-
-async function saveRun() {
-  const km   = parseFloat(document.getElementById('run-km').value)  || 0;
-  const h    = parseInt(document.getElementById('run-h').value)    || 0;
-  const min  = parseInt(document.getElementById('run-min').value)  || 0;
-  const sec  = parseInt(document.getElementById('run-sec').value)  || 0;
-  const totalSecs = h*3600 + min*60 + sec;
-  const totalMins = Math.round(totalSecs / 60) || 1;
-
-  const err = document.getElementById('run-err');
-  if(km <= 0 && totalSecs <= 0) { err.textContent = 'Introduce distancia o duración.'; return; }
-  if(km < 0)         { err.textContent = 'La distancia no puede ser negativa.'; return; }
-  if(totalSecs < 0)  { err.textContent = 'La duración no puede ser negativa.'; return; }
-  err.textContent = '';
-
-  const btn = document.querySelector('#run-form button[onclick="saveRun()"]');
-  btn.textContent = 'Guardando…';
-  btn.style.opacity = '.6';
-
-  const ok = await supaInsert({
-    user_code:        S.userCode,
-    session_type:     'running',
-    day_id:           null,
-    mode:             null,
-    duration_minutes: totalMins,
-    distance_km:      km > 0 ? km : null
-  });
-
-  btn.textContent = 'Guardar sesión →';
-  btn.style.opacity = '1';
-
-  if(ok) {
-    // Build success detail string
-    const parts = [];
-    if(km > 0) parts.push(`${km} km`);
-    if(totalSecs > 0) {
-      const durStr = h > 0 ? `${h}h ${min}min` : min > 0 ? `${min}min ${sec}s` : `${sec}s`;
-      parts.push(durStr);
-    }
-    if(km > 0 && totalSecs > 0) {
-      const speed = (km / (totalSecs/3600)).toFixed(1);
-      parts.push(`${speed} km/h`);
-    }
-    document.getElementById('run-success-detail').textContent = parts.join(' · ');
-    document.getElementById('run-form').style.display    = 'none';
-    document.getElementById('run-success').style.display = 'block';
-    // Refresh sessions for calendar
-    supaFetch(S.userCode).then(sessions => { S.sessions = sessions; });
-  } else {
-    err.textContent = 'Error al guardar. Comprueba tu conexión.';
-  }
-}
-
-async function renderRunHistory() {
-  const el = document.getElementById('run-history');
-  el.innerHTML = '<div style="font-size:.78rem;color:var(--muted)">Cargando…</div>';
-  const all = S.sessions.length ? S.sessions : await supaFetch(S.userCode);
-  const runs = all
-    .filter(s => s.session_type === 'running')
-    .sort((a,b) => new Date(b.completed_at) - new Date(a.completed_at))
-    .slice(0, 10);
-
-  if(!runs.length) { el.innerHTML = '<div style="font-size:.78rem;color:var(--muted)">Sin sesiones todavía.</div>'; return; }
-
-  el.innerHTML = runs.map(r => {
-    const d     = new Date(r.completed_at);
-    const date  = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-    const parts = [];
-    if(r.distance_km) parts.push(`${r.distance_km} km`);
-    if(r.duration_minutes) parts.push(`${r.duration_minutes} min`);
-    if(r.distance_km && r.duration_minutes) {
-      const speed = (r.distance_km / (r.duration_minutes/60)).toFixed(1);
-      parts.push(`${speed} km/h`);
-    }
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:.7rem .9rem;background:var(--surface);border-radius:10px;margin-bottom:.4rem;border:1px solid var(--border)">
-      <div>
-        <div style="font-size:.7rem;color:var(--muted);margin-bottom:.15rem">${date}</div>
-        <div style="font-size:.85rem;font-weight:700;color:#FF8C00">🏃 ${parts.join(' · ') || '—'}</div>
-      </div>
-    </div>`;
-  }).join('');
 }
 
 // ════════════════════════════════════════
